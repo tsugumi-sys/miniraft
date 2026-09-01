@@ -5,7 +5,8 @@ import (
 	"fmt"
 )
 
-const MaxMessageSize = 1 << 20 // 1MiB = 1024KiB = 1024 * 1024B = 2^20 B
+const MessageTypeSize = 1
+const MaxPayloadSize = 1 << 20 // 1MiB = 1024KiB = 1024 * 1024B = 2^20 B
 
 func Encode(message Message) ([]byte, error) {
 	var buf bytes.Buffer
@@ -24,7 +25,7 @@ func Encode(message Message) ([]byte, error) {
 	}
 
 	payload := buf.Bytes()
-	if len(payload) > MaxMessageSize {
+	if len(payload) > MessageTypeSize+MaxPayloadSize {
 		return nil, fmt.Errorf("payload too large")
 	}
 	return payload, nil
