@@ -31,5 +31,23 @@ func Encode(message Message) ([]byte, error) {
 	return payload, nil
 }
 
-// func Decode(payload []byte) (Message error) {
-// }
+func Decode(data []byte) (Message, error) {
+	if len(data) < MessageTypeSize {
+		return nil, fmt.Errorf("payload too small")
+	}
+	if len(data) > MessageTypeSize+MaxPayloadSize {
+		return nil, fmt.Errorf("payload too large")
+	}
+
+	msgType := MessageType(data[0])
+	payload := data[MessageTypeSize:]
+
+	switch msgType {
+	case TypeProposeRequest:
+		return &ProposeRequest{
+			Data: bytes.Clone(payload), // It's safer to clone bytes here, because a caller may change the original buffer. The slice may be changed after this instance created.
+		}, nil
+	default:
+		return nil, fmt.Errorf("unknown message type %T", msgType)
+	}
+}

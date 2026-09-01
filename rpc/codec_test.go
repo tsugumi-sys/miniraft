@@ -19,3 +19,25 @@ func TestEncodeRejectPayloadOverLimit(t *testing.T) {
 		t.Fatalf("Encode accepts too-large payload.")
 	}
 }
+
+func TestDecodeRejectTooSmallPayload(t *testing.T) {
+	data := make([]byte, 0)
+	if _, err := Decode(data); err == nil {
+		t.Fatalf("Decode accepts an empty data")
+	}
+}
+
+func TestDecodeRejectPayloadOverLimit(t *testing.T) {
+	data := make([]byte, 1<<20+1)
+	if _, err := Decode(data); err == nil {
+		t.Fatalf("Decode accepts an too large data")
+	}
+}
+
+func TestDecodeAcceptsMaxPayload(t *testing.T) {
+	data := make([]byte, 1<<20)
+	data[0] = byte(TypeProposeRequest)
+	if _, err := Decode(data); err != nil {
+		t.Fatalf("Decode unexpected error %v", err)
+	}
+}
