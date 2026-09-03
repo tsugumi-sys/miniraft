@@ -2,30 +2,28 @@ package rpc
 
 import (
 	"bytes"
+	"encoding/binary"
 	"fmt"
 )
 
-func Encode(message Message) ([]byte, error) {
-	var buf bytes.Buffer
-
-	if err := buf.WriteByte(byte(message.MsgType())); err != nil {
-		return nil, err
+func Encode(message Message) (Frame, error) {
+	if !validateMessageType(message) {
+		return Frame{}, fmt.Errorf("invalid message type: %d", message.MsgType())
+	}
+	payload, err := message.EncodePayload()
+	if err != nil {
+		return Frame{}, fmt.Errorf("failed to encode payload: %w", err)
+	}
+	payloadSize := len(payload)
+	if payloadSize > MaxPayloadSize {
+		return Frame{}, fmt.Errorf("payload too large, got %d bytes, maximum is %d", payloadSize, MaxPayloadSize)
 	}
 
-	switch m := message.(type) {
-	case *ProposeRequest:
-		if _, err := buf.Write(m.Data); err != nil {
-			return nil, err
-		}
-	default:
-		return nil, fmt.Errorf("unsupported message type %T", message)
-	}
-
-	payload := buf.Bytes()
-	if len(payload) > MessageTypeSize+MaxPayloadSize {
-		return nil, fmt.Errorf("payload too large")
-	}
-	return payload, nil
+	frame := make([]byte, FrameHeaderSize+MessageTypeSize+payloadSize)
+	binary.BigEndian.PutUint32(frame[:FrameHeaderSize], uint32(payloadSize))
+	frame[FrameHeaderSize] = byte(message.MsgType())
+	copy(frame[FrameHeaderSize+MessageTypeSize:], payload)
+	return Frame{data: frame}, nil
 }
 
 func Decode(data []byte) (Message, error) {

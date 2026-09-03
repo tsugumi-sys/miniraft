@@ -2,7 +2,6 @@ package rpc
 
 import (
 	"encoding/binary"
-	"errors"
 	"fmt"
 	"io"
 )
@@ -37,12 +36,8 @@ func ReadFrame(r io.Reader) (Frame, error) {
 }
 
 func WriteFrame(w io.Writer, frame Frame) error {
-	if len(frame.data) < FrameHeaderSize {
-		return errors.New("the frame too short")
-	}
-	payloadSize := binary.BigEndian.Uint32(frame.data[:FrameHeaderSize])
-	if payloadSize > MaxPayloadSize {
-		return fmt.Errorf("the payload too large: %d, maximum: %d", payloadSize, MaxPayloadSize)
+	if err := validateFrame(frame); err != nil {
+		return err
 	}
 
 	data := frame.data
@@ -55,6 +50,26 @@ func WriteFrame(w io.Writer, frame Frame) error {
 			return io.ErrShortWrite
 		}
 		data = data[n:]
+	}
+	return nil
+}
+
+func validateFrame(frame Frame) error {
+	f := frame.data
+	minFrameSize := FrameHeaderSize + MessageTypeSize
+
+	if len(f) < minFrameSize {
+		return fmt.Errorf("frame too short: %d", len(f))
+	}
+
+	payloadSize := binary.BigEndian.Uint32(f[:FrameHeaderSize])
+	if payloadSize > MaxPayloadSize {
+		return fmt.Errorf("frame too lart: %d", len(f))
+	}
+
+	expectedFrameSize := FrameHeaderSize + MessageTypeSize + payloadSize
+	if len(f) != int(expectedFrameSize) {
+		return fmt.Errorf("frame length mismatch: got %d, expected %d", len(f), expectedFrameSize)
 	}
 	return nil
 }

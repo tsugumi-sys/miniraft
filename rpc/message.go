@@ -12,3 +12,12 @@ type Message interface {
 	MsgType() MessageType
 	EncodePayload() ([]byte, error)
 }
+
+func validateMessageType(message Message) bool {
+	switch message.MsgType() {
+	case TypeProposeRequest, TypeProposeResponse:
+		return true
+	default:
+		return false
+	}
+}

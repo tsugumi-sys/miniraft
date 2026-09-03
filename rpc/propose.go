@@ -60,3 +60,18 @@ func (p *ProposeResponse) EncodePayload() ([]byte, error) {
 	binary.BigEndian.PutUint64(payload[17:], p.LeaderID)
 	return payload[:], nil
 }
+
+func decodeProposeRequest(frame Frame) (Message, error) {
+	if err := validateFrame(frame); err != nil {
+		return nil, err
+	}
+
+	f := frame.data
+	messageType := MessageType(f[FrameHeaderSize])
+	if messageType != TypeProposeRequest {
+		return nil, fmt.Errorf("unexpected message type: got %d, want %d", messageType, TypeProposeRequest)
+	}
+	return &ProposeRequest{
+		Data: f[FrameHeaderSize+MessageTypeSize:],
+	}, nil
+}
