@@ -5,9 +5,6 @@ import (
 	"fmt"
 )
 
-const MessageTypeSize = 1
-const MaxPayloadSize = 1 << 20 // 1MiB = 1024KiB = 1024 * 1024B = 2^20 B
-
 func Encode(message Message) ([]byte, error) {
 	var buf bytes.Buffer
 

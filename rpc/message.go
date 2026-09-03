@@ -10,4 +10,5 @@ const (
 
 type Message interface {
 	MsgType() MessageType
+	EncodePayload() []byte
 }
