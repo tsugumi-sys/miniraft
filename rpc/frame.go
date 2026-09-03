@@ -14,6 +14,7 @@ type Frame struct {
 const FrameHeaderSize = 4
 const MessageTypeSize = 1
 const MaxPayloadSize = 1 << 20 // 1MiB
+const MinFrameSize = FrameHeaderSize + MessageTypeSize
 
 func ReadFrame(r io.Reader) (Frame, error) {
 	var header [FrameHeaderSize]byte
@@ -56,15 +57,14 @@ func WriteFrame(w io.Writer, frame Frame) error {
 
 func validateFrame(frame Frame) error {
 	f := frame.data
-	minFrameSize := FrameHeaderSize + MessageTypeSize
 
-	if len(f) < minFrameSize {
+	if len(f) < MinFrameSize {
 		return fmt.Errorf("frame too short: %d", len(f))
 	}
 
 	payloadSize := binary.BigEndian.Uint32(f[:FrameHeaderSize])
 	if payloadSize > MaxPayloadSize {
-		return fmt.Errorf("frame too lart: %d", len(f))
+		return fmt.Errorf("frame too large: %d", len(f))
 	}
 
 	expectedFrameSize := FrameHeaderSize + MessageTypeSize + payloadSize

@@ -1,7 +1,6 @@
 package rpc
 
 import (
-	"bytes"
 	"encoding/binary"
 	"fmt"
 )
@@ -26,23 +25,15 @@ func Encode(message Message) (Frame, error) {
 	return Frame{data: frame}, nil
 }
 
-func Decode(data []byte) (Message, error) {
-	if len(data) < MessageTypeSize {
-		return nil, fmt.Errorf("payload too small")
-	}
-	if len(data) > MessageTypeSize+MaxPayloadSize {
-		return nil, fmt.Errorf("payload too large")
+func Decode(frame Frame) (Message, error) {
+	if err := validateFrame(frame); err != nil {
+		return nil, err
 	}
 
-	msgType := MessageType(data[0])
-	payload := data[MessageTypeSize:]
-
-	switch msgType {
-	case TypeProposeRequest:
-		return &ProposeRequest{
-			Data: bytes.Clone(payload), // It's safer to clone bytes here, because a caller may change the original buffer. The slice may be changed after this instance created.
-		}, nil
-	default:
-		return nil, fmt.Errorf("unknown message type %T", msgType)
+	msgType := MessageType(frame.data[FrameHeaderSize])
+	decoder, ok := decoders[msgType]
+	if !ok {
+		return nil, fmt.Errorf("decoder not supported for the message type: %d", msgType)
 	}
+	return decoder(frame)
 }
