@@ -25,6 +25,8 @@ type ProposeResponse struct {
 	LeaderID uint64
 }
 
+const ProposeResponsePayloadSize = 25
+
 func (s ProposeResponseStatus) Valid() bool {
 	switch s {
 	case StatusCommitted, StatusFailed, NoitLeader:
@@ -46,8 +48,6 @@ func (*ProposeResponse) MsgType() MessageType {
 	return TypeProposeResponse
 }
 
-const ProposeResponsePayloadSize = 1 + 8 + 8 + 8
-
 func (p *ProposeResponse) EncodePayload() ([]byte, error) {
 	if !p.Status.Valid() {
 		return nil, fmt.Errorf("invalid propose response status: %d", p.Status)
@@ -65,13 +65,29 @@ func decodeProposeRequest(frame Frame) (Message, error) {
 	if err := validateFrame(frame); err != nil {
 		return nil, err
 	}
-
-	f := frame.data
-	messageType := MessageType(f[FrameHeaderSize])
-	if messageType != TypeProposeRequest {
-		return nil, fmt.Errorf("unexpected message type: got %d, want %d", messageType, TypeProposeRequest)
+	if err := validateFrameMessageType(frame, TypeProposeRequest); err != nil {
+		return nil, err
 	}
 	return &ProposeRequest{
-		Data: f[FrameHeaderSize+MessageTypeSize:],
+		Data: frame.data[FrameHeaderSize+MessageTypeSize:],
+	}, nil
+}
+
+func decodeProposeResponse(frame Frame) (Message, error) {
+	if err := validateFrame(frame); err != nil {
+		return nil, err
+	}
+	if err := validateFramePayloadSize(frame, ProposeResponsePayloadSize); err != nil {
+		return nil, err
+	}
+	if err := validateFrameMessageType(frame, TypeProposeResponse); err != nil {
+		return nil, err
+	}
+
+	return &ProposeResponse{
+		Status:   ProposeResponseStatus(frame.data[0]),
+		Term:     binary.BigEndian.Uint64(frame.data[1:9]),
+		LogIndex: binary.BigEndian.Uint64(frame.data[9:17]),
+		LeaderID: binary.BigEndian.Uint64(frame.data[17:]),
 	}, nil
 }

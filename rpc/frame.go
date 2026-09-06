@@ -73,3 +73,25 @@ func validateFrame(frame Frame) error {
 	}
 	return nil
 }
+
+func validateFramePayloadSize(frame Frame, expected uint) error {
+	if err := validateFrame(frame); err != nil {
+		return err
+	}
+	payloadSize := binary.BigEndian.Uint64(frame.data[:FrameHeaderSize])
+	if payloadSize != RequestVoteRequestPayloadSize {
+		return fmt.Errorf("paylaod size mismatch, got %d, expected %d", payloadSize, expected)
+	}
+	return nil
+}
+
+func validateFrameMessageType(frame Frame, expected MessageType) error {
+	if err := validateFrame(frame); err != nil {
+		return err
+	}
+	msgType := MessageType(frame.data[FrameHeaderSize])
+	if msgType != expected {
+		return fmt.Errorf("unexpected message type, got %d, expected %d", msgType, expected)
+	}
+	return nil
+}

@@ -3,5 +3,7 @@ package rpc
 type MessageDecoder func(frame Frame) (Message, error)
 
 var decoders = map[MessageType]MessageDecoder{
-	TypeProposeRequest: decodeProposeRequest,
+	TypeProposeRequest:     decodeProposeRequest,
+	TypeProposeResponse:    decodeProposeResponse,
+	TypeRequestVoteRequest: decodeRequestVoteRequest,
 }
