@@ -8,6 +8,8 @@ const (
 	TypeProposeResponse
 	TypeRequestVoteRequest
 	TypeRequestVoteResponse
+	TypeAppendEntriesRequest
+	TypeAppendEntriesResponse
 )
 
 type Message interface {
