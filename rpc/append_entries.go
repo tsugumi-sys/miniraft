@@ -1,6 +1,9 @@
 package rpc
 
-import "encoding/binary"
+import (
+	"encoding/binary"
+	"fmt"
+)
 
 type LogEntry struct {
 	Index   uint64
@@ -57,8 +60,44 @@ func (m *AppendEntriesRequest) EncodePayload() ([]byte, error) {
 	return payload, nil
 }
 
-// func decodeAppendEntriesRequest(frame Frame) (Message, error) {
-// }
+func decodeAppendEntriesRequest(frame Frame) (Message, error) {
+	if err := validateFrame(frame); err != nil {
+		return nil, err
+	}
+	data := frame.data
+	if len(data) < FrameHeaderSize+MessageTypeSize+AppendEntriesRequestMetaSize {
+		return nil, fmt.Errorf("frame too short for AppendEntriesRequest, it should be greater than or equal to %v, but got %v", AppendEntriesRequestMetaSize, len(data))
+	}
+	payload := data[FrameHeaderSize+MessageTypeSize:]
+	var entries []LogEntry
+	offset := AppendEntriesRequestMetaSize
+	for offset < len(payload) {
+		if len(payload[offset:]) < 20 {
+			return nil, fmt.Errorf("LogEntry too short. expected > 20, but got %v", len(payload[offset:]))
+		}
+		index := binary.BigEndian.Uint64(payload[offset : offset+8])
+		offset += 8
+		term := binary.BigEndian.Uint64(payload[offset : offset+8])
+		offset += 8
+		entryPayloadSize := binary.BigEndian.Uint32(payload[offset : offset+4])
+		offset += 4
+		entries = append(entries, LogEntry{
+			Index:   index,
+			Term:    term,
+			Payload: payload[offset : offset+int(entryPayloadSize)],
+		})
+		offset += int(entryPayloadSize)
+	}
+
+	return &AppendEntriesRequest{
+		Term:         binary.BigEndian.Uint64(payload[:8]),
+		LeaderID:     binary.BigEndian.Uint64(payload[8:16]),
+		PrevLogIndex: binary.BigEndian.Uint64(payload[16:24]),
+		PrevLogTerm:  binary.BigEndian.Uint64(payload[24:32]),
+		LeaderCommit: binary.BigEndian.Uint64(payload[32:40]),
+		Entries:      entries,
+	}, nil
+}
 
 // func (m *AppendEntriesResponse) MsgType() MessageType {
 // 	return TypeAppendEntriesResponse
