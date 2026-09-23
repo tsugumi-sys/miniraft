@@ -98,3 +98,35 @@ func TestDecodeAppendEntriesRequest(t *testing.T) {
 		t.Errorf("unexpected payload size. expected: %v, but got %v", 0, len(logEntry.Payload))
 	}
 }
+
+func TestEncodeAppendEntriesResponse(t *testing.T) {
+	msg := &AppendEntriesResponse{
+		Term:       1,
+		FollowerID: 2,
+		Success:    true,
+		MatchIndex: 3,
+	}
+	if _, err := msg.EncodePayload(); err != nil {
+		t.Fatalf("failed to encode AppendEntriesResponse")
+	}
+}
+
+func TestDecodeAppendEntriesResponse(t *testing.T) {
+	// Test invalid Frame
+	if _, err := decodeAppendEntriesResponse(Frame{data: make([]byte, 0)}); err == nil {
+		t.Errorf("empty frame must return error")
+	}
+	// Test invalid payload size
+	frameBadPayloadSize := Frame{data: make([]byte, FrameHeaderSize+MessageTypeSize+31)}
+	binary.BigEndian.PutUint32(frameBadPayloadSize.data[:FrameHeaderSize], 31)
+	if _, err := decodeAppendEntriesResponse(frameBadPayloadSize); err == nil {
+		t.Errorf("invalid payload size must return error")
+	}
+	// Test invalid message type
+	frameInvalidMsgType := Frame{data: make([]byte, FrameHeaderSize+MessageTypeSize+AppendEntriesResponseSize)}
+	frameInvalidMsgType.data[FrameHeaderSize] = byte(TypeProposeRequest)
+	binary.BigEndian.PutUint32(frameInvalidMsgType.data[:FrameHeaderSize], AppendEntriesResponseSize)
+	if _, err := decodeAppendEntriesResponse(frameInvalidMsgType); err == nil {
+		t.Errorf("invalid message type must return error")
+	}
+}

@@ -35,7 +35,7 @@ Status:
 
 indexやnodeIdのzero valueはunknownを示すようにする。
 
-- Commited
+- Committed
 - Failed ( term: 応答ノードのcurrent Term, logIndex: 0, leaderId: ノードID )
 - NotLeader ( term: 応答ノードのcurrent term, logIndex: 0, leaderId: 0 )
 

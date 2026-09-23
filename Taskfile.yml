@@ -1,0 +1,22 @@
+version: '3'
+
+tasks:
+  typos:
+    desc: Check spelling
+    cmds:
+      - typos .
+
+  typos:fix:
+    desc: Fix spelling mistakes
+    cmds:
+      - typos --write-changes .
+
+  pre-commit:install:
+    desc: Install Git pre-commit hooks
+    cmds:
+      - pre-commit install --install-hooks
+
+  pre-commit:
+    desc: Run pre-commit hooks on all tracked files
+    cmds:
+      - pre-commit run --all-files

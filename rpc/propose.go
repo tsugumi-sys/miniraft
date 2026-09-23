@@ -15,7 +15,7 @@ const (
 	StatusUnknown ProposeResponseStatus = iota
 	StatusCommitted
 	StatusFailed
-	NoitLeader
+	NotLeader
 )
 
 type ProposeResponse struct {
@@ -29,7 +29,7 @@ const ProposeResponsePayloadSize = 25
 
 func (s ProposeResponseStatus) Valid() bool {
 	switch s {
-	case StatusCommitted, StatusFailed, NoitLeader:
+	case StatusCommitted, StatusFailed, NotLeader:
 		return true
 	default:
 		return false

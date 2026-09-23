@@ -74,13 +74,13 @@ func validateFrame(frame Frame) error {
 	return nil
 }
 
-func validateFramePayloadSize(frame Frame, expected uint) error {
+func validateFramePayloadSize(frame Frame, expected uint32) error {
 	if err := validateFrame(frame); err != nil {
 		return err
 	}
-	payloadSize := binary.BigEndian.Uint64(frame.data[:FrameHeaderSize])
-	if payloadSize != RequestVoteRequestPayloadSize {
-		return fmt.Errorf("paylaod size mismatch, got %d, expected %d", payloadSize, expected)
+	payloadSize := binary.BigEndian.Uint32(frame.data[:FrameHeaderSize])
+	if payloadSize != expected {
+		return fmt.Errorf("payload size mismatch, got %d, expected %d", payloadSize, expected)
 	}
 	return nil
 }

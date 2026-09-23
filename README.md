@@ -1,3 +1,28 @@
+## 開発ツール
+
+[Task](https://taskfile.dev/)、[typos](https://github.com/crate-ci/typos)、
+[pre-commit](https://pre-commit.com/)を使用する。
+macOSでは次のコマンドでインストールできる。
+
+```sh
+brew install go-task typos pre-commit
+```
+
+clone後にGitフックをセットアップする。
+
+```sh
+task pre-commit:install
+```
+
+コミット時にステージ済みファイルのスペルをチェックする。自動修正はしない。
+手動でチェック・修正する場合は次のコマンドを使う。
+
+```sh
+task typos            # リポジトリのスペルチェック
+task typos:fix        # スペルの自動修正（実行後に差分を確認する）
+task pre-commit       # Git管理下の全ファイルにフックを実行
+```
+
 ## 前提
 
 ### Raftって何？なぜ必要なの？
@@ -100,7 +125,7 @@ B,C <---- msg push ---- A
 
 なぜpollingではないのかというと、無駄を減らすため。基本的にLeaderからFollowerに対してはlog replicationを実施するため、
 常にメッセージを送り続けている。したがって、LeaderであるAからメッセージを送り続けることで、それをB/Cは受信できれば、Aが生きていることを
-確認できる。replicationするログがない場合でも、空のログを送ることによってheatbeatとして監視するようにしている。
+確認できる。replicationするログがない場合でも、空のログを送ることによってheartbeatとして監視するようにしている。
 
 逆にAは, BやCが死んだことを認識するのか？実は、死んだまでは判断できない。ただ、死んだかもと認識する。上のメッセージに対する返答がない場合。
 それでも、Bだけが死んだ場合では、Cは生きているとわかるので、まだ過半数のノードが生存しているからクラスタは正常な状態を保ち続けることができる。
@@ -124,7 +149,7 @@ B,C <---- msg push ---- A
 
 A: Leader dead...
 B: Follower election timeout!
-C: Followe 
+C: Follower
 
 
 2. Bはfollower -> Candidateになる。
@@ -187,4 +212,4 @@ Candidateは現在のtermに加えて、latestLogTerm,latestLogIndexを公開し
 
 で決まる。これにより、commit済みのログを持たない古いCandidateがLeaderになることを防ぐ。commit時にQuorumによって必ず過半数は最新のログを
 処理していることが決まっているので、例えばCandidateが2つあって、最新でないログを持っている方のRequestVoteが先にfollowerに届いたとしても、
-最新ログを持つfolloweによって投票拒否されるため投票過半数を得ることはできない。
+最新ログを持つfollowerによって投票拒否されるため投票過半数を得ることはできない。

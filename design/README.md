@@ -15,7 +15,7 @@
 
 - 起動後、過半数の投票を得たノードがleaderになること。
 - Leaderは定期的にHeartbeatをFollowerへ送ること。
-- Followerは一定時間Heatbeatを受信しなかった場合、選挙を開始すること。
+- Followerは一定時間Heartbeatを受信しなかった場合、選挙を開始すること。
 - Execution TimeoutはノードごとにRandom化すること。
 - Leaderを手動で停止した場合に、残った２台からLeaderを選出できること。
 - ノードは自分より大きなtermを受信した場合、Followerへ遷移すること。
@@ -44,7 +44,7 @@
 - ノード間通信にはTCPを利用すること。
 - メッセージは長さを判定できるフレーム形式にすること。
 - RequestVote,AppendEntriesを実装すること。
-- AppendEntriesはheatbeatとしても利用すること。
+- AppendEntriesはheartbeatとしても利用すること。
 - RPCにはtermと送信元IDを含めること。
 - 読み書きにはtimeoutを設定すること。
 - 最大メッセージサイズを定めること。

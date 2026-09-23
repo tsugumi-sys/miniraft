@@ -3,7 +3,7 @@ package rpc
 type MessageType uint8
 
 const (
-	TypeUnknwon MessageType = iota
+	TypeUnknown MessageType = iota
 	TypeProposeRequest
 	TypeProposeResponse
 	TypeRequestVoteRequest
