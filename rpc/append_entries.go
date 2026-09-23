@@ -99,9 +99,9 @@ func decodeAppendEntriesRequest(frame Frame) (Message, error) {
 	}, nil
 }
 
-// func (m *AppendEntriesResponse) MsgType() MessageType {
-// 	return TypeAppendEntriesResponse
-// }
+func (m *AppendEntriesResponse) MsgType() MessageType {
+	return TypeAppendEntriesResponse
+}
 
 // func decodeAppendEntriesResponse(frame Frame) (Message, error) {
 
