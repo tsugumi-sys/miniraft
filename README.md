@@ -145,6 +145,8 @@ B,C <---- msg push ---- A
 
 ### Electionはどう実行されるの？
 
+A,B,Cの3台のノードがいるケースを考えてみよう。
+
 1. Election Timeoutが発火
 
 A: Leader dead...
