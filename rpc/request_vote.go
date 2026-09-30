@@ -4,29 +4,29 @@ import (
 	"encoding/binary"
 )
 
-type RequestVoteRequest struct {
+type VoteRequest struct {
 	Term           uint64
 	CandidateID    uint64
 	LatestLogIndex uint64
 	LatestLogTerm  uint64
 }
 
-const RequestVoteRequestPayloadSize = 32
+const VoteRequestPayloadSize = 32
 
-type RequestVoteResponse struct {
+type VoteResponse struct {
 	VoterTerm   uint64
 	VoterID     uint64
 	VoteGranted bool
 }
 
-const RequestVoteResponsePayloadSize = 16 + 1
+const VoteResponsePayloadSize = 17
 
-func (m *RequestVoteRequest) MsgType() MessageType {
-	return TypeRequestVoteRequest
+func (m *VoteRequest) MsgType() MessageType {
+	return TypeVoteRequest
 }
 
-func (m *RequestVoteRequest) EncodePayload() ([]byte, error) {
-	payload := make([]byte, RequestVoteRequestPayloadSize)
+func (m *VoteRequest) EncodePayload() ([]byte, error) {
+	payload := make([]byte, VoteRequestPayloadSize)
 	binary.BigEndian.PutUint64(payload[:8], m.Term)
 	binary.BigEndian.PutUint64(payload[8:16], m.CandidateID)
 	binary.BigEndian.PutUint64(payload[16:24], m.LatestLogIndex)
@@ -34,17 +34,17 @@ func (m *RequestVoteRequest) EncodePayload() ([]byte, error) {
 	return payload, nil
 }
 
-func decodeRequestVoteRequest(frame Frame) (Message, error) {
+func decodeVoteRequest(frame Frame) (Message, error) {
 	if err := validateFrame(frame); err != nil {
 		return nil, err
 	}
-	if err := validateFramePayloadSize(frame, RequestVoteRequestPayloadSize); err != nil {
+	if err := validateFramePayloadSize(frame, VoteRequestPayloadSize); err != nil {
 		return nil, err
 	}
-	if err := validateFrameMessageType(frame, TypeRequestVoteRequest); err != nil {
+	if err := validateFrameMessageType(frame, TypeVoteRequest); err != nil {
 		return nil, err
 	}
-	return &RequestVoteRequest{
+	return &VoteRequest{
 		Term:           binary.BigEndian.Uint64(frame.data[:8]),
 		CandidateID:    binary.BigEndian.Uint64(frame.data[8:16]),
 		LatestLogIndex: binary.BigEndian.Uint64(frame.data[16:24]),
@@ -52,8 +52,8 @@ func decodeRequestVoteRequest(frame Frame) (Message, error) {
 	}, nil
 }
 
-func (m *RequestVoteResponse) EncodePayload() ([]byte, error) {
-	payload := make([]byte, RequestVoteResponsePayloadSize)
+func (m *VoteResponse) EncodePayload() ([]byte, error) {
+	payload := make([]byte, VoteResponsePayloadSize)
 	binary.BigEndian.PutUint64(payload[8:16], m.VoterTerm)
 	binary.BigEndian.PutUint64(payload[16:24], m.VoterID)
 	if m.VoteGranted {
@@ -64,18 +64,18 @@ func (m *RequestVoteResponse) EncodePayload() ([]byte, error) {
 	return payload, nil
 }
 
-func (m *RequestVoteResponse) MsgType() MessageType {
-	return TypeRequestVoteResponse
+func (m *VoteResponse) MsgType() MessageType {
+	return TypeVoteResponse
 }
 
-func decodeRequestVoteResponse(frame Frame) (Message, error) {
+func decodeVoteResponse(frame Frame) (Message, error) {
 	if err := validateFrame(frame); err != nil {
 		return nil, err
 	}
-	if err := validateFramePayloadSize(frame, RequestVoteRequestPayloadSize); err != nil {
+	if err := validateFramePayloadSize(frame, VoteRequestPayloadSize); err != nil {
 		return nil, err
 	}
-	if err := validateFrameMessageType(frame, TypeRequestVoteResponse); err != nil {
+	if err := validateFrameMessageType(frame, TypeVoteResponse); err != nil {
 		return nil, err
 	}
 	var voteGranted bool
@@ -84,7 +84,7 @@ func decodeRequestVoteResponse(frame Frame) (Message, error) {
 	} else {
 		voteGranted = false
 	}
-	return &RequestVoteResponse{
+	return &VoteResponse{
 		VoterTerm:   binary.BigEndian.Uint64(frame.data[:8]),
 		VoterID:     binary.BigEndian.Uint64(frame.data[8:16]),
 		VoteGranted: voteGranted,

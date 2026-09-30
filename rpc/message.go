@@ -6,8 +6,8 @@ const (
 	TypeUnknown MessageType = iota
 	TypeProposeRequest
 	TypeProposeResponse
-	TypeRequestVoteRequest
-	TypeRequestVoteResponse
+	TypeVoteRequest
+	TypeVoteResponse
 	TypeAppendEntriesRequest
 	TypeAppendEntriesResponse
 )
@@ -19,7 +19,7 @@ type Message interface {
 
 func validateMessageType(message Message) bool {
 	switch message.MsgType() {
-	case TypeProposeRequest, TypeProposeResponse, TypeRequestVoteRequest, TypeRequestVoteResponse:
+	case TypeProposeRequest, TypeProposeResponse, TypeVoteRequest, TypeVoteResponse:
 		return true
 	default:
 		return false
