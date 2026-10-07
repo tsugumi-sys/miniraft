@@ -114,3 +114,16 @@ func TestEncodeVoteResponse(t *testing.T) {
 		t.Fatalf("EncodePayload() got: %x, want: %x", encoded, want)
 	}
 }
+
+func TestVoteResponseMsgType(t *testing.T) {
+	msg := &VoteResponse{
+		VoterTerm:   1,
+		VoterID:     2,
+		VoteGranted: true,
+	}
+
+	want := TypeVoteResponse
+	if msg.MsgType() != want {
+		t.Fatalf("unexpected message type, got: %v, want: %v", msg.MsgType(), want)
+	}
+}
