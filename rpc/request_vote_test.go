@@ -26,3 +26,16 @@ func TestEncodeRequestVoteRequest(t *testing.T) {
 		t.Fatalf("EncodePayload() got: %x, want: %x", payload, want)
 	}
 }
+
+func TestVoteRequestMsgType(t *testing.T) {
+	message := &VoteRequest{
+		Term:           1,
+		CandidateID:    2,
+		LatestLogIndex: 3,
+		LatestLogTerm:  4,
+	}
+	want := TypeVoteRequest
+	if message.MsgType() != want {
+		t.Fatalf("unexpected message type, got: %v, want: %v", message.MsgType(), want)
+	}
+}
