@@ -94,3 +94,23 @@ func TestDecodeVoteRequest_ValidFrame(t *testing.T) {
 		t.Fatalf("decodeVoteRequest() got: %v, want: %v", got, want)
 	}
 }
+
+func TestEncodeVoteResponse(t *testing.T) {
+	msg := &VoteResponse{
+		VoterTerm:   1,
+		VoterID:     2,
+		VoteGranted: true,
+	}
+	encoded, err := msg.EncodePayload()
+	if err != nil {
+		t.Fatalf("EncodePayload() got: %v", err)
+	}
+	want := []byte{
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, // VoterTerm
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, // VoterID
+		0x01, // VoteGranted
+	}
+	if !bytes.Equal(encoded, want) {
+		t.Fatalf("EncodePayload() got: %x, want: %x", encoded, want)
+	}
+}

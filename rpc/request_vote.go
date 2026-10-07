@@ -58,12 +58,12 @@ func decodeVoteRequest(frame Frame) (Message, error) {
 
 func (m *VoteResponse) EncodePayload() ([]byte, error) {
 	payload := make([]byte, VoteResponsePayloadSize)
-	binary.BigEndian.PutUint64(payload[8:16], m.VoterTerm)
-	binary.BigEndian.PutUint64(payload[16:24], m.VoterID)
+	binary.BigEndian.PutUint64(payload[:8], m.VoterTerm)
+	binary.BigEndian.PutUint64(payload[8:16], m.VoterID)
 	if m.VoteGranted {
-		payload[24] = 1
+		payload[16] = 1
 	} else {
-		payload[24] = 0
+		payload[16] = 0
 	}
 	return payload, nil
 }
