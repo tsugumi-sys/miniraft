@@ -91,7 +91,7 @@ func TestDecodeVoteRequest_ValidFrame(t *testing.T) {
 		LatestLogTerm:  4,
 	}
 	if *got != want {
-		t.Fatalf("decodeVoteRequest() got: %v, want: %v", got, want)
+		t.Fatalf("decodeVoteRequest() got: %v, want: %v", *got, want)
 	}
 }
 
@@ -125,5 +125,58 @@ func TestVoteResponseMsgType(t *testing.T) {
 	want := TypeVoteResponse
 	if msg.MsgType() != want {
 		t.Fatalf("unexpected message type, got: %v, want: %v", msg.MsgType(), want)
+	}
+}
+
+func TestDecodeVoteResponse_ShortFrame(t *testing.T) {
+	frameData := make([]byte, 1) // too short frame.
+	if _, err := decodeVoteResponse(Frame{data: frameData}); err == nil {
+		t.Fatal("frame is not validated.")
+	}
+}
+func TestDecodeVoteResponse_InvalidPayloadSize(t *testing.T) {
+	payloadSize := 18
+	frameData := make([]byte, FrameHeaderSize+MessageTypeSize+payloadSize)
+	binary.BigEndian.PutUint32(frameData[:FrameHeaderSize], uint32(payloadSize))
+	frameData[FrameHeaderSize] = byte(TypeVoteRequest)
+	if _, err := decodeVoteResponse(Frame{data: frameData}); err == nil {
+		t.Fatal("payload size is not validated")
+	}
+}
+func TestDecodeVoteResponse_InvalidMessageType(t *testing.T) {
+	payloadSize := VoteResponsePayloadSize
+	frameData := make([]byte, FrameHeaderSize+MessageTypeSize+payloadSize)
+	binary.BigEndian.PutUint32(frameData[:FrameHeaderSize], uint32(payloadSize))
+	frameData[FrameHeaderSize] = byte(TypeVoteRequest)
+	if _, err := decodeVoteResponse(Frame{data: frameData}); err == nil {
+		t.Fatal("message type is not validated")
+	}
+}
+func TestDecodeVoteResponse_ValidFrame(t *testing.T) {
+	payloadSize := VoteResponsePayloadSize
+	frameData := make([]byte, FrameHeaderSize+MessageTypeSize+payloadSize)
+	binary.BigEndian.PutUint32(frameData[:FrameHeaderSize], uint32(payloadSize))
+	frameData[FrameHeaderSize] = byte(TypeVoteResponse)
+	offset := FrameHeaderSize + MessageTypeSize
+	for i := 1; i <= 2; i++ {
+		binary.BigEndian.PutUint64(frameData[offset:offset+8], uint64(i))
+		offset += 8
+	}
+
+	msg, err := decodeVoteResponse(Frame{data: frameData})
+	if err != nil {
+		t.Fatalf("failed to decode: %v", err)
+	}
+	got, ok := msg.(*VoteResponse)
+	if !ok {
+		t.Fatalf("unexpected message type: %T", msg)
+	}
+	want := VoteResponse{
+		VoterTerm:   1,
+		VoterID:     2,
+		VoteGranted: false,
+	}
+	if *got != want {
+		t.Fatalf("decodeVoteResponse() got: %v, want: %v", *got, want)
 	}
 }

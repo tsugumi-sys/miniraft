@@ -76,7 +76,7 @@ func decodeVoteResponse(frame Frame) (Message, error) {
 	if err := validateFrame(frame); err != nil {
 		return nil, err
 	}
-	if err := validateFramePayloadSize(frame, VoteRequestPayloadSize); err != nil {
+	if err := validateFramePayloadSize(frame, VoteResponsePayloadSize); err != nil {
 		return nil, err
 	}
 	if err := validateFrameMessageType(frame, TypeVoteResponse); err != nil {
@@ -88,9 +88,13 @@ func decodeVoteResponse(frame Frame) (Message, error) {
 	} else {
 		voteGranted = false
 	}
+	payload, err := frame.Payload()
+	if err != nil {
+		return nil, err
+	}
 	return &VoteResponse{
-		VoterTerm:   binary.BigEndian.Uint64(frame.data[:8]),
-		VoterID:     binary.BigEndian.Uint64(frame.data[8:16]),
+		VoterTerm:   binary.BigEndian.Uint64(payload[:8]),
+		VoterID:     binary.BigEndian.Uint64(payload[8:16]),
 		VoteGranted: voteGranted,
 	}, nil
 }
