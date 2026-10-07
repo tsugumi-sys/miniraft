@@ -2,6 +2,7 @@ package rpc
 
 import (
 	"bytes"
+	"encoding/binary"
 	"testing"
 )
 
@@ -37,5 +38,59 @@ func TestVoteRequestMsgType(t *testing.T) {
 	want := TypeVoteRequest
 	if message.MsgType() != want {
 		t.Fatalf("unexpected message type, got: %v, want: %v", message.MsgType(), want)
+	}
+}
+
+func TestDecodeVoteRequest_ShortFrame(t *testing.T) {
+	frameData := make([]byte, 1) // too short frame.
+	if _, err := decodeVoteRequest(Frame{data: frameData}); err == nil {
+		t.Fatal("frame is not validated.")
+	}
+}
+func TestDecodeVoteRequest_InvalidPayloadSize(t *testing.T) {
+	payloadSize := 31
+	frameData := make([]byte, FrameHeaderSize+MessageTypeSize+payloadSize)
+	binary.BigEndian.PutUint32(frameData[:FrameHeaderSize], uint32(payloadSize))
+	frameData[FrameHeaderSize] = byte(TypeVoteRequest)
+	if _, err := decodeVoteRequest(Frame{data: frameData}); err == nil {
+		t.Fatal("payload size is not validated")
+	}
+}
+func TestDecodeVoteRequest_InvalidMessageType(t *testing.T) {
+	payloadSize := VoteRequestPayloadSize
+	frameData := make([]byte, FrameHeaderSize+MessageTypeSize+payloadSize)
+	binary.BigEndian.PutUint32(frameData[:FrameHeaderSize], uint32(payloadSize))
+	frameData[FrameHeaderSize] = byte(TypeVoteResponse)
+	if _, err := decodeVoteRequest(Frame{data: frameData}); err == nil {
+		t.Fatal("message type is not validated")
+	}
+}
+func TestDecodeVoteRequest_ValidFrame(t *testing.T) {
+	payloadSize := VoteRequestPayloadSize
+	frameData := make([]byte, FrameHeaderSize+MessageTypeSize+payloadSize)
+	binary.BigEndian.PutUint32(frameData[:FrameHeaderSize], uint32(payloadSize))
+	frameData[FrameHeaderSize] = byte(TypeVoteRequest)
+	offset := FrameHeaderSize + MessageTypeSize
+	for i := 1; i <= 4; i++ {
+		binary.BigEndian.PutUint64(frameData[offset:offset+8], uint64(i))
+		offset += 8
+	}
+
+	msg, err := decodeVoteRequest(Frame{data: frameData})
+	if err != nil {
+		t.Fatalf("failed to decode: %v", err)
+	}
+	got, ok := msg.(*VoteRequest)
+	if !ok {
+		t.Fatalf("unexpected message type: %T", msg)
+	}
+	want := VoteRequest{
+		Term:           1,
+		CandidateID:    2,
+		LatestLogIndex: 3,
+		LatestLogTerm:  4,
+	}
+	if *got != want {
+		t.Fatalf("decodeVoteRequest() got: %v, want: %v", got, want)
 	}
 }

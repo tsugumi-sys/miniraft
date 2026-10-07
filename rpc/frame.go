@@ -95,3 +95,10 @@ func validateFrameMessageType(frame Frame, expected MessageType) error {
 	}
 	return nil
 }
+
+func (f Frame) Payload() ([]byte, error) {
+	if err := validateFrame(f); err != nil {
+		return nil, err
+	}
+	return f.data[FrameHeaderSize+MessageTypeSize:], nil
+}

@@ -44,11 +44,15 @@ func decodeVoteRequest(frame Frame) (Message, error) {
 	if err := validateFrameMessageType(frame, TypeVoteRequest); err != nil {
 		return nil, err
 	}
+	payload, err := frame.Payload()
+	if err != nil {
+		return nil, err
+	}
 	return &VoteRequest{
-		Term:           binary.BigEndian.Uint64(frame.data[:8]),
-		CandidateID:    binary.BigEndian.Uint64(frame.data[8:16]),
-		LatestLogIndex: binary.BigEndian.Uint64(frame.data[16:24]),
-		LatestLogTerm:  binary.BigEndian.Uint64(frame.data[24:]),
+		Term:           binary.BigEndian.Uint64(payload[:8]),
+		CandidateID:    binary.BigEndian.Uint64(payload[8:16]),
+		LatestLogIndex: binary.BigEndian.Uint64(payload[16:24]),
+		LatestLogTerm:  binary.BigEndian.Uint64(payload[24:]),
 	}, nil
 }
 
