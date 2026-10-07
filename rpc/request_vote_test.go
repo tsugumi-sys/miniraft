@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestEncodeRequestVoteRequest(t *testing.T) {
+func TestEncodeVoteRequest(t *testing.T) {
 	message := &VoteRequest{
 		Term:           1,
 		CandidateID:    2,
