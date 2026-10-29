@@ -61,6 +61,7 @@ func (m *AppendEntriesRequest) EncodePayload() ([]byte, error) {
 		binary.BigEndian.PutUint32(payload[currentOffset:currentOffset+4], uint32(entryPayloadSize))
 		currentOffset += 4
 		copy(payload[currentOffset:currentOffset+entryPayloadSize], entry.Payload)
+		currentOffset += entryPayloadSize
 	}
 	return payload, nil
 }

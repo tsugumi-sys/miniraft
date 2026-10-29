@@ -41,6 +41,12 @@ func TestEncodeAppendEntriesRequest_WithLogEntries(t *testing.T) {
 		Term:    2,
 		Payload: []byte("hello"),
 	})
+	entries = append(entries, LogEntry{
+		Index:   3,
+		Term:    4,
+		Payload: []byte("world!"),
+	})
+
 	message := &AppendEntriesRequest{
 		Term:         1,
 		LeaderID:     2,
@@ -66,6 +72,13 @@ func TestEncodeAppendEntriesRequest_WithLogEntries(t *testing.T) {
 		0x00, 0x00, 0x00, 0x05, // LogEntry Payload Size, "hello" is encoded in UTF8.
 	}
 	want = append(want, []byte("hello")...)
+	want = append(want, []byte{
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, // LogEntry Index
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x04, // LogEntry Term
+		0x00, 0x00, 0x00, 0x06, // LogEntry Payload Size, "world!" is encoded in UTF8.
+	}...)
+	want = append(want, []byte("world!")...)
+
 	fmt.Printf("payload size: %v, want size: %v", len(payload), len(want))
 	if !bytes.Equal(payload, want) {
 		t.Fatalf("EncodePayload() got: %x, want: %x", payload, want)
