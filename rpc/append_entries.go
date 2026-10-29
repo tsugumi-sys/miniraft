@@ -39,7 +39,6 @@ const AppendEntriesFixedSize = 8 * 5
 
 func (m *AppendEntriesRequest) EncodePayload() ([]byte, error) {
 	entriesSize := 0
-	fmt.Printf("entries: %v", m.Entries)
 	for i := 0; i < len(m.Entries); i++ {
 		entriesSize += LogEntryMetaSize + len(m.Entries[i].Payload)
 	}
