@@ -28,26 +28,29 @@ type AppendEntriesResponse struct {
 }
 
 const AppendEntriesResponseSize = 8 * 4
+const LogEntryFixedSize = 8*2 + 4 // Index, Term, Payload Size
 
 func (m *AppendEntriesRequest) MsgType() MessageType {
 	return TypeAppendEntriesRequest
 }
 
-const LogEntryMetaSize = 8*2 + 8 // Index|Term|PayloadSize
-const AppendEntriesRequestMetaSize = 8 * 5
+const LogEntryMetaSize = 8*2 + 4 // Index|Term|PayloadSize
+const AppendEntriesFixedSize = 8 * 5
 
 func (m *AppendEntriesRequest) EncodePayload() ([]byte, error) {
 	entriesSize := 0
+	fmt.Printf("entries: %v", m.Entries)
 	for i := 0; i < len(m.Entries); i++ {
 		entriesSize += LogEntryMetaSize + len(m.Entries[i].Payload)
 	}
-	payload := make([]byte, AppendEntriesRequestMetaSize+entriesSize)
+	payload := make([]byte, AppendEntriesFixedSize+entriesSize)
+	fmt.Printf("entriesSize: %v", entriesSize)
 	binary.BigEndian.PutUint64(payload[:8], m.Term)
 	binary.BigEndian.PutUint64(payload[8:16], m.LeaderID)
 	binary.BigEndian.PutUint64(payload[16:24], m.PrevLogIndex)
 	binary.BigEndian.PutUint64(payload[24:32], m.PrevLogTerm)
-	binary.BigEndian.PutUint64(payload[32:40], m.LeaderCommit)
-	currentOffset := 40
+	binary.BigEndian.PutUint64(payload[32:AppendEntriesFixedSize], m.LeaderCommit)
+	currentOffset := AppendEntriesFixedSize
 	for i := 0; i < len(m.Entries); i++ {
 		entry := m.Entries[i]
 		binary.BigEndian.PutUint64(payload[currentOffset:currentOffset+8], entry.Index)
@@ -55,8 +58,8 @@ func (m *AppendEntriesRequest) EncodePayload() ([]byte, error) {
 		binary.BigEndian.PutUint64(payload[currentOffset:currentOffset+8], entry.Term)
 		currentOffset += 8
 		entryPayloadSize := len(entry.Payload)
-		binary.BigEndian.PutUint64(payload[currentOffset:currentOffset+8], uint64(entryPayloadSize))
-		currentOffset += 8
+		binary.BigEndian.PutUint32(payload[currentOffset:currentOffset+4], uint32(entryPayloadSize))
+		currentOffset += 4
 		copy(payload[currentOffset:currentOffset+entryPayloadSize], entry.Payload)
 	}
 	return payload, nil
@@ -66,32 +69,32 @@ func decodeAppendEntriesRequest(frame Frame) (Message, error) {
 	if err := validateFrame(frame); err != nil {
 		return nil, err
 	}
-	data := frame.data
-	if len(data) < FrameHeaderSize+MessageTypeSize+AppendEntriesRequestMetaSize {
-		return nil, fmt.Errorf("frame too short for AppendEntriesRequest, it should be greater than or equal to %v, but got %v", AppendEntriesRequestMetaSize, len(data))
+	payload, err := frame.Payload()
+	if err != nil {
+		return nil, err
+	}
+	if len(payload) < AppendEntriesFixedSize {
+		return nil, fmt.Errorf("frame too short for AppendEntriesRequest, it should be greater than or equal to %v, but got %v", AppendEntriesFixedSize, len(payload))
 	}
 	if err := validateFrameMessageType(frame, TypeAppendEntriesRequest); err != nil {
 		return nil, err
 	}
-	payload := data[FrameHeaderSize+MessageTypeSize:]
 	var entries []LogEntry
-	offset := AppendEntriesRequestMetaSize
+	offset := AppendEntriesFixedSize
 	for offset < len(payload) {
-		if len(payload[offset:]) < 20 {
-			return nil, fmt.Errorf("LogEntry too short. expected > 20, but got %v", len(payload[offset:]))
+		entryBytes := payload[offset:]
+		if len(entryBytes) < LogEntryFixedSize {
+			return nil, fmt.Errorf("LogEntry too short. expected > %v, but got %v", LogEntryFixedSize, len(entryBytes))
 		}
-		index := binary.BigEndian.Uint64(payload[offset : offset+8])
-		offset += 8
-		term := binary.BigEndian.Uint64(payload[offset : offset+8])
-		offset += 8
-		entryPayloadSize := binary.BigEndian.Uint32(payload[offset : offset+4])
-		offset += 4
+		index := binary.BigEndian.Uint64(entryBytes[:8])
+		term := binary.BigEndian.Uint64(entryBytes[8:16])
+		entryPayloadSize := binary.BigEndian.Uint32(entryBytes[16:20])
 		entries = append(entries, LogEntry{
 			Index:   index,
 			Term:    term,
-			Payload: payload[offset : offset+int(entryPayloadSize)],
+			Payload: entryBytes[LogEntryFixedSize : LogEntryFixedSize+int(entryPayloadSize)],
 		})
-		offset += int(entryPayloadSize)
+		offset += LogEntryFixedSize + int(entryPayloadSize)
 	}
 
 	return &AppendEntriesRequest{

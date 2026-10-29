@@ -1,29 +1,76 @@
 package rpc
 
 import (
+	"bytes"
 	"encoding/binary"
+	"fmt"
 	"testing"
 )
 
-func TestEncodeAppendEntriesRequest(t *testing.T) {
-	entries := make([]LogEntry, 1)
+func TestEncodeAppendEntriesRequest_NoLogEntry(t *testing.T) {
+	message := &AppendEntriesRequest{
+		Term:         1,
+		LeaderID:     2,
+		PrevLogIndex: 3,
+		PrevLogTerm:  4,
+		LeaderCommit: 5,
+		Entries:      make([]LogEntry, 0),
+	}
+	payload, err := message.EncodePayload()
+
+	if err != nil {
+		t.Fatalf("Encode failed unexpectedly: %v", err)
+	}
+
+	want := []byte{
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, // Term
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, // LeaderID
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, // PrevLogIndex
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x04, // PrevLogTerm
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x05, // LeaderCommit
+	}
+	if !bytes.Equal(payload, want) {
+		t.Fatalf("EncodePayload() got: %x, want: %x", payload, want)
+	}
+}
+
+func TestEncodeAppendEntriesRequest_WithLogEntries(t *testing.T) {
+	entries := make([]LogEntry, 0)
 	entries = append(entries, LogEntry{
 		Index:   1,
-		Term:    1,
+		Term:    2,
 		Payload: []byte("hello"),
 	})
 	message := &AppendEntriesRequest{
 		Term:         1,
-		LeaderID:     1,
-		PrevLogIndex: 1,
-		PrevLogTerm:  1,
-		LeaderCommit: 1,
-		Entries:      make([]LogEntry, 0),
+		LeaderID:     2,
+		PrevLogIndex: 3,
+		PrevLogTerm:  4,
+		LeaderCommit: 5,
+		Entries:      entries,
 	}
+	payload, err := message.EncodePayload()
 
-	if _, err := message.EncodePayload(); err != nil {
+	if err != nil {
 		t.Fatalf("Encode failed unexpectedly: %v", err)
 	}
+
+	want := []byte{
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, // Term
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, // LeaderID
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, // PrevLogIndex
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x04, // PrevLogTerm
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x05, // LeaderCommit
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, // LogEntry Index
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, // LogEntry Term
+		0x00, 0x00, 0x00, 0x05, // LogEntry Payload Size, "hello" is encoded in UTF8.
+	}
+	want = append(want, []byte("hello")...)
+	fmt.Printf("payload size: %v, want size: %v", len(payload), len(want))
+	if !bytes.Equal(payload, want) {
+		t.Fatalf("EncodePayload() got: %x, want: %x", payload, want)
+	}
+
 }
 
 func TestAppendEntriesRequestMsgType(t *testing.T) {
@@ -41,7 +88,8 @@ func TestAppendEntriesRequestMsgType(t *testing.T) {
 }
 
 func TestDecodeAppendEntriesRequest(t *testing.T) {
-	payloadSize := AppendEntriesRequestMetaSize + 20
+	logEntrySize := 20
+	payloadSize := AppendEntriesFixedSize + logEntrySize
 	frameData := make([]byte, FrameHeaderSize+MessageTypeSize+payloadSize)
 	// Frame metadata
 	binary.BigEndian.PutUint32(frameData[:FrameHeaderSize], uint32(payloadSize))
